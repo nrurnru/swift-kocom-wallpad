@@ -16,13 +16,18 @@ final class App {
     static let shared = App()
 
     func initialize() throws {
-        let mqttService = try MQTTService()
-        let rs485Service = try RS485Service(mqttService: mqttService)
+        self.rs485Service = try RS485Service.initialize()
+        self.discoveryService = DiscoveryService()
+        
+        let mqttService = try MQTTService(
+            rs485Service: self.rs485Service,
+            discovery: self.discoveryService
+        )
         
         self.mqttService = mqttService
-        self.rs485Service = rs485Service
         
-        self.discoveryService = DiscoveryService(mqttService: mqttService)
+        self.discoveryService.setMQTTService(mqttService: mqttService)
+        self.rs485Service.setMQTTService(mqttService)
     }
     
     func start() throws {

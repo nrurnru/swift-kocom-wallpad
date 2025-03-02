@@ -7,10 +7,23 @@ protocol MQTTClientProtocol {
     func publish(topic: String, payload: String)
 }
 
+/**
+ *
+ * MQTT 클라이언트 담당 객체
+ * 1. 현재 기기 상태를 MQTT 브로커에 전파해 상태 동기화
+ * 2. HomeAssistant에서 조작되어 발생한 이벤트를 전달
+ * 3. 가용 디바이스에 대한 Discovery 전달
+ *
+ */
 final class MQTTService: MQTTClientProtocol {
+    private let rs485Service: RS485Service
+    private let discovery: DiscoveryService
     private let mqtt: CocoaMQTT
                               
-    init() throws {
+    init(
+        rs485Service: RS485Service,
+        discovery: DiscoveryService
+    ) throws {
         guard let host: String = InfoPlistReader.value(for: .MQTT_HOST),
               let port: UInt16 = InfoPlistReader.value(for: .MQTT_PORT),
               let username: String = InfoPlistReader.value(for: .MQTT_USERNAME),
@@ -34,6 +47,8 @@ final class MQTTService: MQTTClientProtocol {
         mqtt.enableSSL = false
         mqtt.autoReconnect = true
         
+        self.rs485Service = rs485Service
+        self.discovery = discovery
         self.mqtt = mqtt
         self.mqtt.delegate = self
     }
@@ -59,47 +74,6 @@ final class MQTTService: MQTTClientProtocol {
     func publishPacket(packet: KocomPacket) {
         // TODO
     }
-    
-    func publishFanDiscovery() {
-        let topic = MQTTPayloadFan.topic()
-        let fan = MQTTPayloadFan.fan()
-        
-        do {
-            try self.publish(topic: topic, device: fan)
-            
-        } catch {
-            Logging.shared.log(error.localizedDescription, level: .error)
-        }
-    }
-    
-    func publishThermoDiscovery() {
-        // TODO: Make this dynamic
-        let roomNumber = [0, 1]
-        for room in roomNumber {
-            let topic = MQTTPayloadThermo.topic(roomNumber: room)
-            let thermo = MQTTPayloadThermo.thermo(roomNumber: room)
-            
-            do {
-                try self.publish(topic: topic, device: thermo)
-            } catch {
-                Logging.shared.log(error.localizedDescription, level: .error)
-            }
-        }
-    }
-    
-    func publish(topic: String, device: Encodable) throws {
-        let data = try JSONEncoder().encode(device)
-        guard let str = String(data: data, encoding: .utf8) else {
-            throw EncodingError.invalidValue(data, .init(codingPath: [], debugDescription: ""))
-        }
-        
-        self.publish(topic: topic, payload: str)
-    }
-    
-    func publishDiscovery() {
-        self.publishFanDiscovery()
-        self.publishThermoDiscovery()
-    }
 }
 
 /// MARK: - CocoaMQTTDelegate
@@ -107,7 +81,7 @@ extension MQTTService: CocoaMQTTDelegate {
     func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
         Logging.shared.log("Connected \(ack)")
         self.subscribe(topic: "kocom2/#", qos: 0)
-        self.publishDiscovery()
+        self.discovery.publishDiscovery()
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16) {

@@ -8,27 +8,43 @@
 import Foundation
 import CocoaAsyncSocket
 
+/**
+ *
+ * RS485 담당 객체
+ * 1. KOCOM 월패드에서 전송된 RS485 시리얼 데이터를 읽어와 MQTT로 전송
+ * 2. MQTT에서 받은 데이터를 RS485 시리얼 데이터로 변환하여 KOCOM 월패드로 전송
+ * 3. EW11 사용 가정, 소켓통신 사용
+ *
+ */
 public final class RS485Service: NSObject {
-    private let mqttService: MQTTService
+    private weak var mqttService: MQTTService?
     private var socket: GCDAsyncSocket
     
     private let host: String
     private let port: UInt16
     
-    init(mqttService: MQTTService) throws {
+    static func initialize() throws -> RS485Service {
         guard let host: String = InfoPlistReader.value(for: .RS485_HOST),
               let port: UInt16 = InfoPlistReader.value(for: .RS485_PORT)
         else {
             throw RS485Error.invalidConfig
         }
         
+        let socket = GCDAsyncSocket(delegate: nil, delegateQueue: .global())
+        
+        return self.init(
+            socket: socket,
+            host: host,
+            port: port
+        )
+    }
+    
+    private init(socket: GCDAsyncSocket, host: String, port: UInt16) {
+        self.socket = socket
         self.host = host
         self.port = port
-        self.mqttService = mqttService
-        self.socket = GCDAsyncSocket(delegate: nil, delegateQueue: .global())
         
         super.init()
-        
         self.socket.delegate = self
     }
     
@@ -101,7 +117,11 @@ public final class RS485Service: NSObject {
             Logging.shared.log("Send Packet received: \(kocomPacket)", level: .debug)
         }
         
-        self.mqttService.publishPacket(packet: kocomPacket)
+        self.mqttService?.publishPacket(packet: kocomPacket)
+    }
+    
+    func setMQTTService(_ service: MQTTService) {
+        self.mqttService = service
     }
 }
 
