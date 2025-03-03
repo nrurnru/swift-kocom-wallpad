@@ -44,6 +44,14 @@ struct Constants {
         static let DATA = 2..<18
         static let PAYLOAD = 9..<18
         static let CHECKSUM_TARGET = 2..<18
+        
+        static let VALUE_FAN_STATE_ONOFF = 0..<1
+        static let VALUE_FAN_PRESET = 2..<3
+        
+        static let VALUE_TEMP_HEATMODE = 0..<1
+        static let VALUE_TEMP_AWAY = 1..<2
+        static let VALUE_TEMP_SET_TEMP = 2..<3
+        static let VALUE_TEMP_CURRENT_TEMP = 4..<5
     }
 }
 

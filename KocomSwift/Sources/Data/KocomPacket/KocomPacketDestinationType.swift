@@ -32,4 +32,8 @@ enum KocomPacketDestinationType: UInt16 {
     var isFan: Bool {
         return self == .FAN
     }
+    
+    var roomNumber: Int {
+        return Int(self.rawValue & 0x00FF)
+    }
 }
