@@ -45,7 +45,7 @@ final class DiscoveryService {
     }
     
     private func publish(topic: String, device: Encodable) throws {
-        let data = try JSONEncoder().encode(device)
+        let data = try CommonJSONEncoder().encode(device)
         guard let payload = String(data: data, encoding: .utf8) else {
             throw EncodingError.invalidValue(data, .init(codingPath: [], debugDescription: ""))
         }
