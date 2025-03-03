@@ -8,8 +8,8 @@
 import Foundation
 
 /**
- - 처음 Homeassistant에서 MQTT사용시 디바이스 등록
- - [Docs](https://www.home-assistant.io/integrations/mqtt)
+ * 처음 Homeassistant에서 MQTT사용시 디바이스 등록
+ * [Docs](https://www.home-assistant.io/integrations/mqtt)
  */
 final class DiscoveryService {
     private weak var mqttService: MQTTService?
@@ -19,8 +19,8 @@ final class DiscoveryService {
     }
     
     private func publishFanDiscovery() {
-        let topic = MQTTPayloadFan.topic()
-        let fan = MQTTPayloadFan.fan()
+        let topic = MQTTFanDiscovery.topic()
+        let fan = MQTTFanDiscovery.fan()
         
         do {
             try self.publish(topic: topic, device: fan)
@@ -33,8 +33,8 @@ final class DiscoveryService {
         // TODO: Make this dynamic
         let roomNumber = [0, 1]
         for room in roomNumber {
-            let topic = MQTTPayloadThermo.topic(roomNumber: room)
-            let thermo = MQTTPayloadThermo.thermo(roomNumber: room)
+            let topic = MQTTThermoDiscovery.topic(roomNumber: room)
+            let thermo = MQTTThermoDiscovery.thermo(roomNumber: room)
             
             do {
                 try self.publish(topic: topic, device: thermo)

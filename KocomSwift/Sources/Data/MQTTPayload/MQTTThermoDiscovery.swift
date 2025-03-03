@@ -1,5 +1,5 @@
 //
-//  MQTTPayloadThermo.swift
+//  MQTTThermoDiscovery.swift
 //  KocomSwift
 //
 //  Created by 최광현 on 3/2/25.
@@ -8,7 +8,7 @@
 import Foundation
 
 /// [Docs](https://www.home-assistant.io/integrations/climate.mqtt/)
-struct MQTTPayloadThermo: Encodable {
+struct MQTTThermoDiscovery: Encodable {
     let name: String
     let mode_state_topic: String
     let mode_command_topic: String
@@ -30,7 +30,7 @@ struct MQTTPayloadThermo: Encodable {
         "homeassistant/climate/swift_kocom_\(roomNumber)_thermo/config"
     }
 
-    static func thermo(roomNumber: Int) -> MQTTPayloadThermo {
+    static func thermo(roomNumber: Int) -> MQTTThermoDiscovery {
         self.init(
             name: "Swift Kocom Wallpad Thermostat \(roomNumber)",
             mode_state_topic: "kocom2/room/thermo/\(roomNumber)/state",

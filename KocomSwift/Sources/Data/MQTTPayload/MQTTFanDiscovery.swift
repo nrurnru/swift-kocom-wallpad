@@ -1,5 +1,5 @@
 //
-//  MQTTPayloadFan.swift
+//  MQTTFanDiscovery.swift
 //  KocomSwift
 //
 //  Created by 최광현 on 3/2/25.
@@ -8,7 +8,7 @@
 import Foundation
 
 /// [Docs](https://www.home-assistant.io/integrations/fan.mqtt/)
-struct MQTTPayloadFan: Encodable {
+struct MQTTFanDiscovery: Encodable {
     let name: String = "Kocom Wallpad Fan 2"
     let command_topic: String = "kocom2/livingroom/fan/command"
     let state_topic: String = "kocom2/livingroom/fan/state"
@@ -28,7 +28,7 @@ struct MQTTPayloadFan: Encodable {
         "homeassistant/fan/swift_kocom_wallpad_fan/config"
     }
     
-    static func fan() -> MQTTPayloadFan {
+    static func fan() -> MQTTFanDiscovery {
         return .init()
     }
 }
