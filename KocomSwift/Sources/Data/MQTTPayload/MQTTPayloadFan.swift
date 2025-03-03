@@ -18,8 +18,8 @@ struct MQTTPayloadFan: Encodable {
     let preset_mode_command_topic: String = "kocom2/livingroom/fan/set_preset_mode/command"
     let preset_mode_command_template: String = "{{ value }}"
     let preset_modes: [String] = ["Off", "Low", "Medium", "High"]
-    let payload_on: String = "on"
-    let payload_off: String = "off"
+    let payload_on: String = "On"
+    let payload_off: String = "Off"
     let qos: Int = 0
     let unique_id: String = "swift_kocom_wallpad_fan"
     let device: MQTTPayloadDevice = .init()
