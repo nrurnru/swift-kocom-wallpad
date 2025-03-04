@@ -72,7 +72,40 @@ final class MQTTService: MQTTClientProtocol {
     }
 
     func publishPacket(packet: KocomPacket) {
-        // TODO
+        do {
+            if packet.dest.isFan {
+                try self.publishFanStatus(packet: packet)
+            } else if packet.dest.isThermo {
+                try self.publishThermoStatus(packet: packet)
+            } else {
+                
+            }
+            try self.publishFanStatus(packet: packet)
+        } catch {
+            Logging.shared.log(error.localizedDescription)
+        }
+    }
+    
+    private func publishFanStatus(packet: KocomPacket) throws {
+        let fan = MQTTFanPayload(kocomPacket: packet)
+        let data = try CommonJSONEncoder().encode(fan)
+        let str = String(data: data, encoding: .utf8) ?? "{}"
+        
+        self.mqtt.publish(
+            "kocom2/livingroom/fan/state",
+            withString: str
+        )
+    }
+    
+    private func publishThermoStatus(packet: KocomPacket) throws {
+        let thermo = MQTTThermoPayload(kocomPacket: packet)
+        let data = try CommonJSONEncoder().encode(thermo)
+        let str = String(data: data, encoding: .utf8) ?? "{}"
+        
+        self.mqtt.publish(
+            "kocom2/room/thermo/\(packet.dest.roomNumber)/state",
+            withString: str
+        )
     }
 }
 

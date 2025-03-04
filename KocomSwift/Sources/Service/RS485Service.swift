@@ -48,9 +48,14 @@ public final class RS485Service: NSObject {
         self.socket.delegate = self
     }
     
-    func readData() {
-        Logging.shared.log("ReadData Ping", level: .debug)
-        
+    /// MQTT서비스를 약한 참조로 할당합니다.
+    func setMQTTService(_ service: MQTTService) {
+        self.mqttService = service
+    }
+    
+    /// AsyncSocket에서 데이터를 읽어옵니다.
+    /// - Note: Trailer가 나올 때까지 패킷 길이만큼 읽어옵니다.
+    private func readData() {
         let trailing = Constants.PacketValue.TRAILER.split
         
         self.socket.readData(
@@ -61,7 +66,7 @@ public final class RS485Service: NSObject {
         )
     }
     
-    func reconnect() {
+    private func reconnect() {
         Logging.shared.log("TCP Socket try Reconnect after 5 seconds...")
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
@@ -74,6 +79,8 @@ public final class RS485Service: NSObject {
         }
     }
     
+    /// 연결 시도
+    /// - Throws: RS485Error.failedToConnect
     func connect() throws {
         Logging.shared.log("TCP try Socket Connect")
         
@@ -87,7 +94,7 @@ public final class RS485Service: NSObject {
         }
     }
     
-    func convertPacketToData(data: Data) -> KocomPacket? {
+    private func convertPacket(data: Data) -> KocomPacket? {
         guard data.count >= Constants.PACKET_LENGTH else {
             Logging.shared.log("RawPacket data too Short: \(data.bigEndianHex)", level: .error)
             return nil
@@ -106,22 +113,22 @@ public final class RS485Service: NSObject {
         return kocomPacket
     }
         
-    func handlePacket(data: Data) {
-        guard let kocomPacket = self.convertPacketToData(data: data) else {
+    private func handlePacket(data: Data) {
+        guard let kocomPacket = self.convertPacket(data: data) else {
             return
         }
         
-        if kocomPacket.signal.isACK {
-            Logging.shared.log("ACK Packet received: \(kocomPacket)", level: .debug)
-        } else {
-            Logging.shared.log("Send Packet received: \(kocomPacket)", level: .debug)
+        switch kocomPacket.command {
+            case .COMMAND_QUERY:
+                break // TODO
+            case .ON, .OFF, .STATE:
+                if kocomPacket.signal.isACK {
+                    Logging.shared.log("ACK Packet received: \(kocomPacket)", level: .debug)
+                    self.mqttService?.publishPacket(packet: kocomPacket)
+                } else {
+                    // DO NOTHING - Send Packet 무시해도 되는 것으로 판단
+                }
         }
-        
-        self.mqttService?.publishPacket(packet: kocomPacket)
-    }
-    
-    func setMQTTService(_ service: MQTTService) {
-        self.mqttService = service
     }
 }
 
