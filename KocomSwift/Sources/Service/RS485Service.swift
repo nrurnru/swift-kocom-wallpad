@@ -23,6 +23,9 @@ public final class RS485Service: NSObject {
     private let host: String
     private let port: UInt16
     
+    /// RS485Service 대체 생성자입니다.
+    /// - Returns: RS485Service
+    /// - Note: NSObject 상속으로 인한 throwable init() 함수 오버라이딩 불가하여 대체 생성자 사용
     static func initialize() throws -> RS485Service {
         guard let host: String = InfoPlistReader.value(for: .RS485_HOST),
               let port: UInt16 = InfoPlistReader.value(for: .RS485_PORT)
@@ -39,6 +42,7 @@ public final class RS485Service: NSObject {
         )
     }
     
+    /// RS485Service 기본 생성자입니다.
     private init(socket: GCDAsyncSocket, host: String, port: UInt16) {
         self.socket = socket
         self.host = host
@@ -94,6 +98,9 @@ public final class RS485Service: NSObject {
         }
     }
     
+    /// Raw Data에서 KocomPacket으로 변환
+    /// - Parameter data: Raw Data
+    /// - Returns: KocomPacket, 실패시 nil
     private func convertPacket(data: Data) -> KocomPacket? {
         guard data.count >= Constants.PACKET_LENGTH else {
             Logging.shared.log("RawPacket data too Short: \(data.bigEndianHex)", level: .error)
@@ -112,7 +119,9 @@ public final class RS485Service: NSObject {
         
         return kocomPacket
     }
-        
+    
+    /// RS485 시리얼 데이터를 읽어와 MQTT로 전송합니다.
+    /// - Parameter data: 읽어온 RS485 시리얼 데이터
     private func handlePacket(data: Data) {
         guard let kocomPacket = self.convertPacket(data: data) else {
             return
