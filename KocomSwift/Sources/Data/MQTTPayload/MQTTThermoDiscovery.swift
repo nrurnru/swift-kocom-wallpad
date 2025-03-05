@@ -19,7 +19,7 @@ struct MQTTThermoDiscovery: Encodable {
     let current_temperature_topic: String
     let current_temperature_template: String
     let unique_id: String
-    let modes: [String]
+    let modes: [MQTTThermoPayload.State]
     let min_temp: Int
     let max_temp: Int
     let retain: Bool
@@ -42,7 +42,7 @@ struct MQTTThermoDiscovery: Encodable {
             current_temperature_topic: "kocom2/room/thermo/\(roomNumber)/state",
             current_temperature_template: "{{ value_json.cur_temp }}",
             unique_id: "swift_kocom_wallpad_thermo_\(roomNumber)",
-            modes: ["off", "heat"],
+            modes: MQTTThermoPayload.State.allCases,
             min_temp: 20,
             max_temp: 30,
             retain: false,

@@ -8,8 +8,8 @@
 import Foundation
 
 /// [Docs](https://www.home-assistant.io/integrations/climate.mqtt/)
-struct MQTTThermoPayload: Encodable {
-    enum State: String, Encodable {
+struct MQTTThermoPayload: Codable {
+    enum State: String, Codable, CaseIterable {
         case off
         case heat
     }

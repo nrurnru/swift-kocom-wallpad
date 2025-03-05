@@ -8,13 +8,13 @@
 import Foundation
 
 /// [Docs](https://www.home-assistant.io/integrations/fan.mqtt/)
-struct MQTTFanPayload: Encodable {
-    enum State: String, Encodable {
+struct MQTTFanPayload: Codable {
+    enum State: String, Codable {
         case Off
         case On
     }
     
-    enum Preset: String, Encodable {
+    enum Preset: String, Codable, CaseIterable {
         case Off
         case Low
         case Medium
