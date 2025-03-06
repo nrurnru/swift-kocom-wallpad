@@ -107,6 +107,69 @@ final class MQTTService: MQTTClientProtocol {
             withString: str
         )
     }
+    
+    func handleMQTTMessage(message: CocoaMQTTMessage) {
+        guard let payload = message.string else {
+            Logging.shared.log("Payload is not a string", level: .error)
+            return
+        }
+        
+        let fanDiscovery = MQTTFanDiscovery.fan()
+        switch message.topic {
+            case fanDiscovery.command_topic:
+                guard let state = MQTTFanPayload.State(rawValue: payload) else {
+                    Logging.shared.log("Invalid Payload \(message)", level: .error)
+                    return
+                }
+                switch state {
+                    case .Off:
+                        break
+                    case .On:
+                        break
+                }
+                
+            case fanDiscovery.preset_mode_command_topic:
+                guard let state = MQTTFanPayload.Preset(rawValue: payload) else {
+                    Logging.shared.log("Invalid Payload \(message)", level: .error)
+                    return
+                }
+                switch state {
+                    case .High:
+                        break
+                    case .Medium:
+                        break
+                    case .Low:
+                        break
+                    case .Off:
+                        break
+                }
+            default:
+                let roomNumber: [Int] = [0, 1]
+                for room in roomNumber {
+                    let thermoDiscovery = MQTTThermoDiscovery.thermo(roomNumber: room)
+                    switch message.topic {
+                        case thermoDiscovery.temperature_command_topic:
+                            guard let double = Double(payload) else {
+                                Logging.shared.log("Invalid Payload \(message)", level: .error)
+                                return
+                            }
+                            let temp = Int(double)
+                            
+                        case thermoDiscovery.mode_command_topic:
+                            switch MQTTThermoPayload.State(rawValue: payload) {
+                                case .heat:
+                                    break
+                                case .off:
+                                    break
+                                case nil:
+                                    break
+                            }
+                        default:
+                            break
+                    }
+                }
+        }
+    }
 }
 
 /// MARK: - CocoaMQTTDelegate
@@ -126,7 +189,7 @@ extension MQTTService: CocoaMQTTDelegate {
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16) {
-        
+        self.handleMQTTMessage(message: message)
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics success: NSDictionary, failed: [String]) {

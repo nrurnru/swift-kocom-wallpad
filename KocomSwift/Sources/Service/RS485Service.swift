@@ -139,6 +139,10 @@ public final class RS485Service: NSObject {
                 }
         }
     }
+    
+    func writeData(data: Data) {
+        self.socket.write(data, withTimeout: 0, tag: 0)
+    }
 }
 
 /// MARK: - GCDAsyncSocketDelegate
