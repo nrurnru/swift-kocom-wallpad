@@ -1,5 +1,5 @@
 //
-//  DiscoveryService.swift
+//  HomeAssistantService.swift
 //  KocomSwift
 //
 //  Created by 최광현 on 2/15/25.
@@ -11,11 +11,16 @@ import Foundation
  * 처음 Homeassistant에서 MQTT사용시 디바이스 등록
  * [Docs](https://www.home-assistant.io/integrations/mqtt)
  */
-final class DiscoveryService {
+final class HomeAssistantService {
     private weak var mqttService: MQTTService?
     
     func setMQTTService(mqttService: MQTTService) {
         self.mqttService = mqttService
+    }
+    
+    func publishDiscovery() {
+        self.publishFanDiscovery()
+        self.publishThermoDiscovery()
     }
     
     private func publishFanDiscovery() {
@@ -53,8 +58,43 @@ final class DiscoveryService {
         self.mqttService?.publish(topic: topic, payload: payload)
     }
     
-    func publishDiscovery() {
-        self.publishFanDiscovery()
-        self.publishThermoDiscovery()
+    
+    /// RS485 패킷 뿌리기
+    /// - Parameter packet: KocomPacket
+    func publishPacket(packet: KocomPacket) {
+        do {
+            if packet.dest.isFan {
+                try self.publishFanStatus(packet: packet)
+            } else if packet.dest.isThermo {
+                try self.publishThermoStatus(packet: packet)
+            } else {
+                
+            }
+            try self.publishFanStatus(packet: packet)
+        } catch {
+            Logging.shared.log(error.localizedDescription)
+        }
+    }
+    
+    private func publishFanStatus(packet: KocomPacket) throws {
+        let fan = MQTTFanPayload(kocomPacket: packet)
+        let data = try CommonJSONEncoder().encode(fan)
+        let str = String(data: data, encoding: .utf8) ?? "{}"
+        
+        self.mqttService?.publish(
+            topic: "kocom2/livingroom/fan/state",
+            payload: str
+        )
+    }
+    
+    private func publishThermoStatus(packet: KocomPacket) throws {
+        let thermo = MQTTThermoPayload(kocomPacket: packet)
+        let data = try CommonJSONEncoder().encode(thermo)
+        let str = String(data: data, encoding: .utf8) ?? "{}"
+        
+        self.mqttService?.publish(
+            topic: "kocom2/room/thermo/\(packet.dest.roomNumber)/state",
+            payload: str
+        )
     }
 }

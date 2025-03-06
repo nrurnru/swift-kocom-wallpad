@@ -17,7 +17,7 @@ import CocoaAsyncSocket
  *
  */
 public final class RS485Service: NSObject {
-    private weak var mqttService: MQTTService?
+    private weak var homeassistantService: HomeAssistantService?
     private var socket: GCDAsyncSocket
     
     private let host: String
@@ -52,9 +52,9 @@ public final class RS485Service: NSObject {
         self.socket.delegate = self
     }
     
-    /// MQTT서비스를 약한 참조로 할당합니다.
-    func setMQTTService(_ service: MQTTService) {
-        self.mqttService = service
+    /// Homeassistant 서비스를 약한 참조로 할당합니다.
+    func setHomeassistantService(_ service: HomeAssistantService) {
+        self.homeassistantService = service
     }
     
     /// AsyncSocket에서 데이터를 읽어옵니다.
@@ -133,7 +133,8 @@ public final class RS485Service: NSObject {
             case .ON, .OFF, .STATE:
                 if kocomPacket.signal.isACK {
                     Logging.shared.log("ACK Packet received: \(kocomPacket)", level: .debug)
-                    self.mqttService?.publishPacket(packet: kocomPacket)
+                    
+                    self.homeassistantService?.publishPacket(packet: kocomPacket)
                 } else {
                     // DO NOTHING - Send Packet 무시해도 되는 것으로 판단
                 }

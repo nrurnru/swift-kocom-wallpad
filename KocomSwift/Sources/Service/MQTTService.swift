@@ -17,12 +17,12 @@ protocol MQTTClientProtocol {
  */
 final class MQTTService: MQTTClientProtocol {
     private let rs485Service: RS485Service
-    private let discovery: DiscoveryService
+    private let discovery: HomeAssistantService
     private let mqtt: CocoaMQTT
-                              
+    
     init(
         rs485Service: RS485Service,
-        discovery: DiscoveryService
+        discovery: HomeAssistantService
     ) throws {
         guard let host: String = InfoPlistReader.value(for: .MQTT_HOST),
               let port: UInt16 = InfoPlistReader.value(for: .MQTT_PORT),
@@ -42,7 +42,7 @@ final class MQTTService: MQTTClientProtocol {
         
         mqtt.username = username
         mqtt.password = password
-                
+        
         mqtt.allowUntrustCACertificate = true
         mqtt.enableSSL = false
         mqtt.autoReconnect = true
@@ -71,43 +71,6 @@ final class MQTTService: MQTTClientProtocol {
         self.mqtt.publish(topic, withString: payload)
     }
 
-    func publishPacket(packet: KocomPacket) {
-        do {
-            if packet.dest.isFan {
-                try self.publishFanStatus(packet: packet)
-            } else if packet.dest.isThermo {
-                try self.publishThermoStatus(packet: packet)
-            } else {
-                
-            }
-            try self.publishFanStatus(packet: packet)
-        } catch {
-            Logging.shared.log(error.localizedDescription)
-        }
-    }
-    
-    private func publishFanStatus(packet: KocomPacket) throws {
-        let fan = MQTTFanPayload(kocomPacket: packet)
-        let data = try CommonJSONEncoder().encode(fan)
-        let str = String(data: data, encoding: .utf8) ?? "{}"
-        
-        self.mqtt.publish(
-            "kocom2/livingroom/fan/state",
-            withString: str
-        )
-    }
-    
-    private func publishThermoStatus(packet: KocomPacket) throws {
-        let thermo = MQTTThermoPayload(kocomPacket: packet)
-        let data = try CommonJSONEncoder().encode(thermo)
-        let str = String(data: data, encoding: .utf8) ?? "{}"
-        
-        self.mqtt.publish(
-            "kocom2/room/thermo/\(packet.dest.roomNumber)/state",
-            withString: str
-        )
-    }
-    
     func handleMQTTMessage(message: CocoaMQTTMessage) {
         guard let payload = message.string else {
             Logging.shared.log("Payload is not a string", level: .error)
