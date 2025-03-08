@@ -10,6 +10,7 @@ import Foundation
 struct Constants {
     /// KOCOM 패킷 길이
     static let PACKET_LENGTH: UInt = 21
+    static let PACKET_VALUE_LENGTH: Int = 16
     
     struct PacketValue {
         /// 0xAA 0x55

@@ -142,6 +142,12 @@ public final class RS485Service: NSObject {
     }
     
     func writeData(data: Data) {
+        guard data.count == Constants.PACKET_LENGTH else {
+            Logging.shared.log("Data Length Invalid: \(data.bigEndianHex)", level: .error)
+            return
+        }
+        
+        Logging.shared.log("Data Sent: \(data.bigEndianHex)", level: .debug)
         self.socket.write(data, withTimeout: 0, tag: 0)
     }
 }

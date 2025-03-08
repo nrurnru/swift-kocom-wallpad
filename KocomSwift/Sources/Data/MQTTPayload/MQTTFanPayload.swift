@@ -9,9 +9,25 @@ import Foundation
 
 /// [Docs](https://www.home-assistant.io/integrations/fan.mqtt/)
 struct MQTTFanPayload: Codable {
-    enum State: String, Codable {
+    enum State: String, Codable,CaseIterable {
         case Off
         case On
+        
+        var value: UInt8 {
+            switch self {
+                case .Off: return 0x00
+                case .On: return 0x10
+            }
+        }
+        
+        init?(value: UInt8) {
+            let matched = Self.allCases.first { $0.value == value }
+            if let matched {
+                self = matched
+            } else {
+                return nil
+            }
+        }
     }
     
     enum Preset: String, Codable, CaseIterable {
@@ -19,6 +35,24 @@ struct MQTTFanPayload: Codable {
         case Low
         case Medium
         case High
+        
+        var value: UInt8 {
+            switch self {
+                case .Off: return 0x00
+                case .Low: return 0x40
+                case .Medium: return 0x80
+                case .High: return 0xC0
+            }
+        }
+        
+        init?(value: UInt8) {
+            let matched = Self.allCases.first { $0.value == value }
+            if let matched {
+                self = matched
+            } else {
+                return nil
+            }
+        }
     }
     
     let state: State
