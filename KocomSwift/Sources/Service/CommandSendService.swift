@@ -98,8 +98,52 @@ final class DefaultCommandSendService: CommandSendService {
         self.rs485Service.writeData(data: packet)
     }
     
-    func commandThermoState(roomNumber: Int, isOn: MQTTThermoPayload.State) {
-        // TODO
+    func commandThermoState(roomNumber: Int, isOn state: MQTTThermoPayload.State) {
+        let heatMode: UInt8 = switch state {
+            case .heat: 0x11
+            case .off: 0x01
+        }
+        
+        let header = Data([
+            Constants.PacketValue.HEADER.split.upper,
+            Constants.PacketValue.HEADER.split.lower,
+        ])
+        
+        let destination: KocomPacketDestinationType = switch roomNumber {
+            case 0: .THERMO_FIRST
+            case 1: .THERMO_SECOND
+            case 2: .THERMO_THIRD
+            case 3: .THERMO_FOURTH
+            default: .UNKNOWN
+        }
+        
+        // TODO: 소수점 스펙 파악 필요
+        let initialTemp: UInt16 = 0x0014 // 20
+        
+        var value = Data([
+            Constants.PacketValue.TYPE_UNKNOWN,
+            KocomPacketSignalType.SEND_FIRST.rawValue,
+            KocomPacketMonitorType.WALLPAD.rawValue,
+            destination.rawValue.split.upper,
+            destination.rawValue.split.lower,
+            KocomPacketDestinationType.WALLPAD.rawValue.split.upper,
+            KocomPacketDestinationType.WALLPAD.rawValue.split.lower,
+            KocomPacketCommandType.STATE.rawValue,
+            heatMode,
+            initialTemp.split.upper,
+            initialTemp.split.lower,
+        ])
+        
+        self.addPadding(data: &value, until: Constants.PACKET_VALUE_LENGTH)
+        let checksum = Data([RawPacket.makeChecksum(data: value)])
+        
+        let trailer = Data([
+            Constants.PacketValue.TRAILER.split.lower,
+            Constants.PacketValue.TRAILER.split.upper,
+        ])
+        
+        let packet = header + value + checksum + trailer
+        self.rs485Service.writeData(data: packet)
     }
     
     func commandThermoTemp(roomNumber: Int, temp: Int) {
