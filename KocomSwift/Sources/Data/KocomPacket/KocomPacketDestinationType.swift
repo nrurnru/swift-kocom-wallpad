@@ -11,9 +11,9 @@ enum KocomPacketDestinationType: UInt16 {
     /// 0x01 0x00
     case WALLPAD = 256
     /// 0x0E 0x00
-    case LIGHT = 18432
+    case LIGHT = 3584
     /// 0x48 0x00
-    case FAN = 13823
+    case FAN = 18432
     /// 0x36 0x00
     case THERMO_FIRST = 13824
     /// 0x36 0x01
