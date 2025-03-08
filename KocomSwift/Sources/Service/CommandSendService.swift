@@ -24,6 +24,7 @@ final class DefaultCommandSendService: CommandSendService {
         self.rs485Service = rs485Service
     }
     
+    /// MARK: Fan
     func commandFanState(state: MQTTFanPayload.State) {
         let onOff: UInt16 = switch state {
             case .On: 0x1101
@@ -63,8 +64,8 @@ final class DefaultCommandSendService: CommandSendService {
     
     func commandFanPreset(preset: MQTTFanPayload.Preset) {
         let onOff: UInt16 = switch preset {
-            case .Low, .Medium, .High: 0x1100
-            case .Off: 0x1000
+            case .Low, .Medium, .High: 0x1101
+            case .Off: 0x0000
         }
         
         let header = Data([
@@ -98,6 +99,7 @@ final class DefaultCommandSendService: CommandSendService {
         self.rs485Service.writeData(data: packet)
     }
     
+    /// MARK: Thermo
     func commandThermoState(roomNumber: Int, isOn state: MQTTThermoPayload.State) {
         let heatMode: UInt16 = switch state {
             case .heat: 0x1100

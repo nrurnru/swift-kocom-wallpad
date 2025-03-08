@@ -70,7 +70,6 @@ final class HomeAssistantService {
             } else {
                 
             }
-            try self.publishFanStatus(packet: packet)
         } catch {
             Logging.shared.log(error.localizedDescription)
         }
