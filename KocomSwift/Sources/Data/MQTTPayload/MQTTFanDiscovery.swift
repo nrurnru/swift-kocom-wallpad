@@ -14,7 +14,7 @@ struct MQTTFanDiscovery: Encodable {
     let state_topic: String = "kocom2/livingroom/fan/state"
     let state_value_template: String = "{{ value_json.state }}"
     let preset_mode_state_topic: String = "kocom2/livingroom/fan/state"
-    let preset_mode_value_template: String = "{{ value_json.state }}"
+    let preset_mode_value_template: String = "{{ value_json.preset }}"
     let preset_mode_command_topic: String = "kocom2/livingroom/fan/set_preset_mode/command"
     let preset_mode_command_template: String = "{{ value }}"
     let preset_modes: [MQTTFanPayload.Preset] = MQTTFanPayload.Preset.allCases

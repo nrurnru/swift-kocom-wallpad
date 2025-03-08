@@ -67,7 +67,7 @@ struct MQTTFanPayload: Codable {
             .value[Constants.PacketRange.VALUE_FAN_PRESET]
             .unsafeBytes()
         
-        self.state = (onOff == 0x10) ? .On : .Off
+        self.state = (onOff == 0x10) ? .Off : .On
         self.preset = switch preset {
             case 0x00: .Off
             case 0x40: .Low

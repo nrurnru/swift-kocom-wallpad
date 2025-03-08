@@ -80,6 +80,8 @@ final class MQTTService: MQTTClientProtocol {
             return
         }
         
+        Logging.shared.log("Received message: \(message.topic) \(payload)", level: .debug)
+        
         let fanDiscovery = MQTTFanDiscovery.fan()
         switch message.topic {
             case fanDiscovery.command_topic:
