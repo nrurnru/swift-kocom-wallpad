@@ -17,12 +17,14 @@ protocol MQTTClientProtocol {
  */
 final class MQTTService: MQTTClientProtocol {
     private let rs485Service: RS485Service
-    private let discovery: HomeAssistantService
+    private let homeAssistantService: HomeAssistantService
+    private let commandSendService: CommandSendService
     private let mqtt: CocoaMQTT
     
     init(
         rs485Service: RS485Service,
-        discovery: HomeAssistantService
+        homeAssistantService: HomeAssistantService,
+        commandSendService: CommandSendService
     ) throws {
         guard let host: String = InfoPlistReader.value(for: .MQTT_HOST),
               let port: UInt16 = InfoPlistReader.value(for: .MQTT_PORT),
@@ -48,7 +50,8 @@ final class MQTTService: MQTTClientProtocol {
         mqtt.autoReconnect = true
         
         self.rs485Service = rs485Service
-        self.discovery = discovery
+        self.homeAssistantService = homeAssistantService
+        self.commandSendService = commandSendService
         self.mqtt = mqtt
         self.mqtt.delegate = self
     }
@@ -84,49 +87,38 @@ final class MQTTService: MQTTClientProtocol {
                     Logging.shared.log("Invalid Payload \(message)", level: .error)
                     return
                 }
-                switch state {
-                    case .Off:
-                        break
-                    case .On:
-                        break
-                }
+                
+                self.commandSendService.commandFanState(state: state)
                 
             case fanDiscovery.preset_mode_command_topic:
                 guard let state = MQTTFanPayload.Preset(rawValue: payload) else {
                     Logging.shared.log("Invalid Payload \(message)", level: .error)
                     return
                 }
-                switch state {
-                    case .High:
-                        break
-                    case .Medium:
-                        break
-                    case .Low:
-                        break
-                    case .Off:
-                        break
-                }
+                
+                self.commandSendService.commandFanPreset(preset: state)
+                
             default:
                 let roomNumber: [Int] = [0, 1]
                 for room in roomNumber {
                     let thermoDiscovery = MQTTThermoDiscovery.thermo(roomNumber: room)
                     switch message.topic {
+                        case thermoDiscovery.mode_command_topic:
+                            guard let state = MQTTThermoPayload.State(rawValue: payload) else {
+                                Logging.shared.log("Invalid Payload \(message)", level: .error)
+                                return
+                            }
+                            
+                            self.commandSendService.commandThermoState(roomNumber: room, isOn: state)
+
                         case thermoDiscovery.temperature_command_topic:
                             guard let double = Double(payload) else {
                                 Logging.shared.log("Invalid Payload \(message)", level: .error)
                                 return
                             }
-                            let temp = Int(double)
                             
-                        case thermoDiscovery.mode_command_topic:
-                            switch MQTTThermoPayload.State(rawValue: payload) {
-                                case .heat:
-                                    break
-                                case .off:
-                                    break
-                                case nil:
-                                    break
-                            }
+                            self.commandSendService.commandThermoTemp(roomNumber: room, temp: Int(double))
+                        
                         default:
                             break
                     }
@@ -140,7 +132,7 @@ extension MQTTService: CocoaMQTTDelegate {
     func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
         Logging.shared.log("Connected \(ack)")
         self.subscribe(topic: "kocom2/#", qos: 0)
-        self.discovery.publishDiscovery()
+        self.homeAssistantService.publishDiscovery()
     }
     
     func mqtt(_ mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16) {

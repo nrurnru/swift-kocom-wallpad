@@ -11,6 +11,7 @@ final class App {
     private var rs485Service: RS485Service!
     private var mqttService: MQTTService!
     private var homeAssistantService: HomeAssistantService!
+    private var commandSendService: CommandSendService!
     
     private init() { }
     static let shared = App()
@@ -19,9 +20,12 @@ final class App {
         self.rs485Service = try RS485Service.initialize()
         self.homeAssistantService = HomeAssistantService()
         
+        self.commandSendService = DefaultCommandSendService(rs485Service: self.rs485Service)
+        
         let mqttService = try MQTTService(
             rs485Service: self.rs485Service,
-            discovery: self.homeAssistantService
+            homeAssistantService: self.homeAssistantService,
+            commandSendService: self.commandSendService
         )
         
         self.mqttService = mqttService
