@@ -48,15 +48,19 @@ final class Logging {
         
         let message: String = "\(date) [\(obj)] \(message)"
         
-        switch (level, self.logLevel.rawValue) {
-            case (LogLevel.debug, ...LogLevel.debug.rawValue):
-                Logger().debug("\(message)")
-            case (LogLevel.info, ...LogLevel.info.rawValue):
-                Logger().info("\(message)")
-            case (LogLevel.error, ...LogLevel.error.rawValue):
-                Logger().error("\(message)")
-            default:
-                return
+        if #available(macOS 11, *) {
+            switch (level, self.logLevel.rawValue) {
+                case (LogLevel.debug, ...LogLevel.debug.rawValue):
+                    Logger().debug("\(message)")
+                case (LogLevel.info, ...LogLevel.info.rawValue):
+                    Logger().info("\(message)")
+                case (LogLevel.error, ...LogLevel.error.rawValue):
+                    Logger().error("\(message)")
+                default:
+                    return
+            }
+        } else {
+            print(message)
         }
     }
 }

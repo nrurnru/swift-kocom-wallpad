@@ -2,9 +2,10 @@ import Foundation
 
 func main() {
     Logging.shared.setLogLevel(.debug)
+    Logging.shared.log("Start Service")
     
     do {
-        try InfoPlistReader.checkEnvironmentValues()
+        try SettingValueReader.loadEnvironmentValues()
     } catch {
         fatalError("\(error) \(error.localizedDescription)")
     }

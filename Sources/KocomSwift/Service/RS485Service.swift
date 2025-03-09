@@ -27,8 +27,8 @@ public final class RS485Service: NSObject {
     /// - Returns: RS485Service
     /// - Note: NSObject 상속으로 인한 throwable init() 함수 오버라이딩 불가하여 대체 생성자 사용
     static func initialize() throws -> RS485Service {
-        guard let host: String = InfoPlistReader.value(for: .RS485_HOST),
-              let port: UInt16 = InfoPlistReader.value(for: .RS485_PORT)
+        guard let host: String = SettingValueReader.value?.RS485_HOST,
+              let port: UInt16 = SettingValueReader.value?.RS485_PORT
         else {
             throw RS485Error.invalidConfig
         }

@@ -9,7 +9,7 @@
 	<key>MQTT_PORT</key>
 	<integer>1883</integer>
 	<key>MQTT_HOST</key>
-	<string>192.168.0.100</string>
+	<string>192.168.0.23</string>
 	<key>MQTT_USERNAME</key>
 	<string>admin</string>
 	<key>MQTT_PASSWORD</key>

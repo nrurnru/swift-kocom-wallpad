@@ -26,10 +26,10 @@ final class MQTTService: MQTTClientProtocol {
         homeAssistantService: HomeAssistantService,
         commandSendService: CommandSendService
     ) throws {
-        guard let host: String = InfoPlistReader.value(for: .MQTT_HOST),
-              let port: UInt16 = InfoPlistReader.value(for: .MQTT_PORT),
-              let username: String = InfoPlistReader.value(for: .MQTT_USERNAME),
-              let password: String = InfoPlistReader.value(for: .MQTT_PASSWORD) else {
+        guard let host: String = SettingValueReader.value?.MQTT_HOST,
+              let port: UInt16 = SettingValueReader.value?.MQTT_PORT,
+              let username: String = SettingValueReader.value?.MQTT_USERNAME,
+              let password: String = SettingValueReader.value?.MQTT_PASSWORD else {
             
             Logging.shared.log("Invalid MQTT Config", level: .error)
             throw MQTTError.invalidConfig
