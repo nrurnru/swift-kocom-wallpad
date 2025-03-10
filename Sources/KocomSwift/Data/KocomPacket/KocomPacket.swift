@@ -18,6 +18,40 @@ struct KocomPacket {
     let value: Data
     let trailer: UInt16
     
+    var rawData: Data {
+        let data =
+        self.signal.rawValue.data +
+        self.monitor.rawValue.data +
+        self.dest.rawValue.data +
+        self.source.rawValue.data +
+        self.command.rawValue.data +
+        self.value
+        
+        let checksum = Self.makeChecksum(data: data)
+        
+        return self.header.data + data + checksum.data + self.trailer.data
+    }
+    
+    /// 체크섬 검사
+    private static func check(rawData: Data, checksum: UInt8) -> Bool {
+        let checksumTarget = rawData[Constants.PacketRange.CHECKSUM_TARGET]
+        let calculatedChecksum = Self.makeChecksum(data: checksumTarget)
+        
+        return calculatedChecksum == checksum
+    }
+    
+    /// KOCOM 패킷 체크섬 값 계산
+    /// - Parameter data: 코콤 패킷 데이터
+    /// - Returns: 2바이트 Checksum
+    /// - Requires: data는 Header, Trailing을 제외한 영역
+    /// - Note: 바이트 배열의 합을 256으로 나눈 나머지입니다.
+    static func makeChecksum(data: Data) -> UInt8 {
+        let sum = data.reduce(0, { UInt16($0) + UInt16($1) })
+        return UInt8(sum % (UInt16(UInt8.max) + 1))
+    }
+}
+
+extension KocomPacket {
     /// 패킷으로부터 KocomPacket 생성
     /// - Parameter rawPacket: Data를 가지는 RawPacket
     /// - Warning: RawPacket의 데이터가 잘못된 경우 nil 반환
@@ -62,23 +96,4 @@ struct KocomPacket {
         self.header = headerValue
         self.trailer = trailerValue
     }
-    
-    /// 체크섬 검사
-    private static func check(rawData: Data, checksum: UInt8) -> Bool {
-        let checksumTarget = rawData[Constants.PacketRange.CHECKSUM_TARGET]
-        let calculatedChecksum = Self.makeChecksum(data: checksumTarget)
-        
-        return calculatedChecksum == checksum
-    }
-    
-    /// KOCOM 패킷 체크섬 값 계산
-    /// - Parameter data: 코콤 패킷 데이터
-    /// - Returns: 2바이트 Checksum
-    /// - Requires: data는 Header, Trailing을 제외한 영역
-    /// - Note: 바이트 배열의 합을 256으로 나눈 나머지입니다.
-    static func makeChecksum(data: Data) -> UInt8 {
-        let sum = data.reduce(0, { UInt16($0) + UInt16($1) })
-        return UInt8(sum % (UInt16(UInt8.max) + 1))
-    }
 }
-

@@ -145,6 +145,10 @@ public final class RS485Service: NSObject {
         Logging.shared.log("Data Sent: \(data.bigEndianHex)", level: .debug)
         self.socket.write(data, withTimeout: 0, tag: 0)
     }
+    
+    func writeData(packet: KocomPacket) {
+        self.writeData(data: packet.rawData)
+    }
 }
 
 /// MARK: - GCDAsyncSocketDelegate

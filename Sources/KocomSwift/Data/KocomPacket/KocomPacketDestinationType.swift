@@ -36,4 +36,14 @@ enum KocomPacketDestinationType: UInt16 {
     var roomNumber: Int {
         return Int(self.rawValue & 0x00FF)
     }
+    
+    init(thermoRoomNumber: Int) {
+        self = switch thermoRoomNumber {
+            case 0: .THERMO_FIRST
+            case 1: .THERMO_SECOND
+            case 2: .THERMO_THIRD
+            case 3: .THERMO_FOURTH
+            default: .UNKNOWN
+        }
+    }
 }

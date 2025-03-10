@@ -31,35 +31,21 @@ final class DefaultCommandSendService: CommandSendService {
             case .Off: 0x0000
         }
         
-        let header = Data([
-            Constants.PacketValue.HEADER.split.upper,
-            Constants.PacketValue.HEADER.split.lower,
-        ])
-        
-        var value = Data([
-            Constants.PacketValue.TYPE_UNKNOWN,
-            KocomPacketSignalType.SEND_FIRST.rawValue,
-            KocomPacketMonitorType.WALLPAD.rawValue,
-            KocomPacketDestinationType.FAN.rawValue.split.upper,
-            KocomPacketDestinationType.FAN.rawValue.split.lower,
-            KocomPacketDestinationType.WALLPAD.rawValue.split.upper,
-            KocomPacketDestinationType.WALLPAD.rawValue.split.lower,
-            KocomPacketCommandType.STATE.rawValue,
-            onOff.split.upper,
-            onOff.split.lower,
-            MQTTFanPayload.Preset.Medium.value
-        ])
-        
+        var value = onOff.data + MQTTFanPayload.Preset.Medium.value.data
         self.addPadding(data: &value, until: Constants.PACKET_VALUE_LENGTH)
-        let checksum = Data([KocomPacket.makeChecksum(data: value)])
         
-        let trailer = Data([
-            Constants.PacketValue.TRAILER.split.lower,
-            Constants.PacketValue.TRAILER.split.upper,
-        ])
+        let packet = KocomPacket(
+            header: Constants.PacketValue.HEADER,
+            signal: .SEND_FIRST,
+            monitor: .WALLPAD,
+            dest: .FAN,
+            source: .WALLPAD,
+            command: .STATE,
+            value: value,
+            trailer: Constants.PacketValue.TRAILER
+        )
         
-        let packet = header + value + checksum + trailer
-        self.rs485Service.writeData(data: packet)
+        self.rs485Service.writeData(packet: packet)
     }
     
     func commandFanPreset(preset: MQTTFanPayload.Preset) {
@@ -68,35 +54,21 @@ final class DefaultCommandSendService: CommandSendService {
             case .Off: 0x0000
         }
         
-        let header = Data([
-            Constants.PacketValue.HEADER.split.upper,
-            Constants.PacketValue.HEADER.split.lower,
-        ])
-        
-        var value = Data([
-            Constants.PacketValue.TYPE_UNKNOWN,
-            KocomPacketSignalType.SEND_FIRST.rawValue,
-            KocomPacketMonitorType.WALLPAD.rawValue,
-            KocomPacketDestinationType.FAN.rawValue.split.upper,
-            KocomPacketDestinationType.FAN.rawValue.split.lower,
-            KocomPacketDestinationType.WALLPAD.rawValue.split.upper,
-            KocomPacketDestinationType.WALLPAD.rawValue.split.lower,
-            KocomPacketCommandType.STATE.rawValue,
-            onOff.split.upper,
-            onOff.split.lower,
-            preset.value
-        ])
-        
+        var value = onOff.data + preset.value.data
         self.addPadding(data: &value, until: Constants.PACKET_VALUE_LENGTH)
-        let checksum = Data([KocomPacket.makeChecksum(data: value)])
         
-        let trailer = Data([
-            Constants.PacketValue.TRAILER.split.lower,
-            Constants.PacketValue.TRAILER.split.upper,
-        ])
+        let packet = KocomPacket(
+            header: Constants.PacketValue.HEADER,
+            signal: .SEND_FIRST,
+            monitor: .WALLPAD,
+            dest: .FAN,
+            source: .WALLPAD,
+            command: .STATE,
+            value: value,
+            trailer: Constants.PacketValue.TRAILER
+        )
         
-        let packet = header + value + checksum + trailer
-        self.rs485Service.writeData(data: packet)
+        self.rs485Service.writeData(packet: packet)
     }
     
     /// MARK: Thermo
@@ -106,89 +78,45 @@ final class DefaultCommandSendService: CommandSendService {
             case .off: 0x0100
         }
         
-        let header = Data([
-            Constants.PacketValue.HEADER.split.upper,
-            Constants.PacketValue.HEADER.split.lower,
-        ])
-        
-        let destination: KocomPacketDestinationType = switch roomNumber {
-            case 0: .THERMO_FIRST
-            case 1: .THERMO_SECOND
-            case 2: .THERMO_THIRD
-            case 3: .THERMO_FOURTH
-            default: .UNKNOWN
-        }
-        
+        let destination = KocomPacketDestinationType(thermoRoomNumber: roomNumber)
         let initialTemp: UInt8 = 0x14 // 20
         
-        var value = Data([
-            Constants.PacketValue.TYPE_UNKNOWN,
-            KocomPacketSignalType.SEND_FIRST.rawValue,
-            KocomPacketMonitorType.WALLPAD.rawValue,
-            destination.rawValue.split.upper,
-            destination.rawValue.split.lower,
-            KocomPacketDestinationType.WALLPAD.rawValue.split.upper,
-            KocomPacketDestinationType.WALLPAD.rawValue.split.lower,
-            KocomPacketCommandType.STATE.rawValue,
-            heatMode.split.upper,
-            heatMode.split.lower,
-            initialTemp
-        ])
-        
+        var value = heatMode.data + initialTemp.data
         self.addPadding(data: &value, until: Constants.PACKET_VALUE_LENGTH)
-        let checksum = Data([KocomPacket.makeChecksum(data: value)])
         
-        let trailer = Data([
-            Constants.PacketValue.TRAILER.split.lower,
-            Constants.PacketValue.TRAILER.split.upper,
-        ])
-        
-        let packet = header + value + checksum + trailer
-        self.rs485Service.writeData(data: packet)
+        let packet = KocomPacket(
+            header: Constants.PacketValue.HEADER,
+            signal: .SEND_FIRST,
+            monitor: .WALLPAD,
+            dest: destination,
+            source: .WALLPAD,
+            command: .STATE,
+            value: value,
+            trailer: Constants.PacketValue.TRAILER
+        )
+            
+        self.rs485Service.writeData(packet: packet)
     }
     
     func commandThermoTemp(roomNumber: Int, temp: Int) {
         let heatMode: UInt16 = 0x1100
-        
-        let header = Data([
-            Constants.PacketValue.HEADER.split.upper,
-            Constants.PacketValue.HEADER.split.lower,
-        ])
-        
-        let destination: KocomPacketDestinationType = switch roomNumber {
-            case 0: .THERMO_FIRST
-            case 1: .THERMO_SECOND
-            case 2: .THERMO_THIRD
-            case 3: .THERMO_FOURTH
-            default: .UNKNOWN
-        }
-        
+        let destination = KocomPacketDestinationType(thermoRoomNumber: roomNumber)
         let temperature = UInt8(temp)
-        
-        var value = Data([
-            Constants.PacketValue.TYPE_UNKNOWN,
-            KocomPacketSignalType.SEND_FIRST.rawValue,
-            KocomPacketMonitorType.WALLPAD.rawValue,
-            destination.rawValue.split.upper,
-            destination.rawValue.split.lower,
-            KocomPacketDestinationType.WALLPAD.rawValue.split.upper,
-            KocomPacketDestinationType.WALLPAD.rawValue.split.lower,
-            KocomPacketCommandType.STATE.rawValue,
-            heatMode.split.upper,
-            heatMode.split.lower,
-            temperature
-        ])
-        
+        var value = heatMode.data + temperature.data
         self.addPadding(data: &value, until: Constants.PACKET_VALUE_LENGTH)
-        let checksum = Data([KocomPacket.makeChecksum(data: value)])
         
-        let trailer = Data([
-            Constants.PacketValue.TRAILER.split.lower,
-            Constants.PacketValue.TRAILER.split.upper,
-        ])
+        let packet = KocomPacket(
+            header: Constants.PacketValue.HEADER,
+            signal: .SEND_FIRST,
+            monitor: .WALLPAD,
+            dest: destination,
+            source: .WALLPAD,
+            command: .STATE,
+            value: value,
+            trailer: Constants.PacketValue.HEADER
+        )
         
-        let packet = header + value + checksum + trailer
-        self.rs485Service.writeData(data: packet)
+        self.rs485Service.writeData(packet: packet)
     }
     
     /// data의 길이가 until이 될 때까지 0x00을 추가합니다.
