@@ -25,7 +25,7 @@ struct KocomPacketTests {
         let data = try #require(Data(bigEndianHex: hex))
         
         let checksumTargetData = data[Constants.PacketRange.CHECKSUM_TARGET]
-        let checksum = RawPacket.makeChecksum(data: checksumTargetData)
+        let checksum = KocomPacket.makeChecksum(data: checksumTargetData)
         #expect(checksum == 0x5E)
         
         let packet = try #require(RawPacket(rawData: data))

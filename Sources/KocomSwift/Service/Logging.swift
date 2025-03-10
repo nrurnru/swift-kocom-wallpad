@@ -48,7 +48,7 @@ final class Logging {
         
         let message: String = "\(date) [\(obj)] \(message)"
         
-        if #available(macOS 11, *) {
+        if #available(macOS 11, *), #available(iOS 14, *) {
             switch (level, self.logLevel.rawValue) {
                 case (LogLevel.debug, ...LogLevel.debug.rawValue):
                     Logger().debug("\(message)")

@@ -107,13 +107,8 @@ public final class RS485Service: NSObject {
             return nil
         }
         
-        guard let packet = RawPacket(rawData: data) else {
-            Logging.shared.log("RawPacket Init Failed: \(data)", level: .error)
-            return nil
-        }
-        
-        guard let kocomPacket = KocomPacket(rawPacket: packet) else {
-            Logging.shared.log("KocomPacket Init Failed: \(packet)", level: .error)
+        guard let kocomPacket = KocomPacket(rawData: data) else {
+            Logging.shared.log("KocomPacket Init Failed: \(data.bigEndianHex)", level: .error)
             return nil
         }
         

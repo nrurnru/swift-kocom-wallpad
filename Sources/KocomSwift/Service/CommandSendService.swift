@@ -51,7 +51,7 @@ final class DefaultCommandSendService: CommandSendService {
         ])
         
         self.addPadding(data: &value, until: Constants.PACKET_VALUE_LENGTH)
-        let checksum = Data([RawPacket.makeChecksum(data: value)])
+        let checksum = Data([KocomPacket.makeChecksum(data: value)])
         
         let trailer = Data([
             Constants.PacketValue.TRAILER.split.lower,
@@ -88,7 +88,7 @@ final class DefaultCommandSendService: CommandSendService {
         ])
         
         self.addPadding(data: &value, until: Constants.PACKET_VALUE_LENGTH)
-        let checksum = Data([RawPacket.makeChecksum(data: value)])
+        let checksum = Data([KocomPacket.makeChecksum(data: value)])
         
         let trailer = Data([
             Constants.PacketValue.TRAILER.split.lower,
@@ -136,7 +136,7 @@ final class DefaultCommandSendService: CommandSendService {
         ])
         
         self.addPadding(data: &value, until: Constants.PACKET_VALUE_LENGTH)
-        let checksum = Data([RawPacket.makeChecksum(data: value)])
+        let checksum = Data([KocomPacket.makeChecksum(data: value)])
         
         let trailer = Data([
             Constants.PacketValue.TRAILER.split.lower,
@@ -180,7 +180,7 @@ final class DefaultCommandSendService: CommandSendService {
         ])
         
         self.addPadding(data: &value, until: Constants.PACKET_VALUE_LENGTH)
-        let checksum = Data([RawPacket.makeChecksum(data: value)])
+        let checksum = Data([KocomPacket.makeChecksum(data: value)])
         
         let trailer = Data([
             Constants.PacketValue.TRAILER.split.lower,
