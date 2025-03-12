@@ -7,6 +7,7 @@
 
 import Foundation
 import Testing
+@testable import KocomSwift
 
 struct DataTests {
     @Test

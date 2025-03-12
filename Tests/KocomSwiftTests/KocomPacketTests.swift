@@ -7,6 +7,7 @@
 
 import Foundation
 import Testing
+@testable import KocomSwift
 
 struct KocomPacketTests {
     @Test
@@ -27,32 +28,13 @@ struct KocomPacketTests {
         let checksumTargetData = data[Constants.PacketRange.CHECKSUM_TARGET]
         let checksum = KocomPacket.makeChecksum(data: checksumTargetData)
         #expect(checksum == 0x5E)
-        
-        let packet = try #require(RawPacket(rawData: data))
-        #expect(packet.checksum == 0x5E)
-    }
-    
-    @Test
-    func init_raw_packet() async throws {
-        let hex = "aa5530bc0048000100001101800000000000c70d0d"
-        let data = try #require(Data(bigEndianHex: hex))
-        let packet = try #require(RawPacket(rawData: data))
-        
-        #expect(data == packet.rawData)
-        
-        let checksumCorruptedHex = "aa5530bc0048000100001101800000000000cc0d0d"
-        let checksumCorruptedData = try #require(Data(bigEndianHex: checksumCorruptedHex))
-        let checksumCorruptedPacket = RawPacket(rawData: checksumCorruptedData)
-        
-        #expect(checksumCorruptedPacket == nil)
     }
     
     @Test
     func init_kocom_packet() async throws {
         let hex = "aa5530bc00360101003a00000000000000005e0d0d"
         let data = try #require(Data(bigEndianHex: hex))
-        let packet = try #require(RawPacket(rawData: data))
-        let kocomPacket = try #require(KocomPacket(rawPacket: packet))
+        let kocomPacket = try #require(KocomPacket(rawData: data))
         
         #expect(kocomPacket.signal == .SEND_FIRST)
         #expect(kocomPacket.monitor == .WALLPAD)
