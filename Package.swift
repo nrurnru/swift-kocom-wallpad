@@ -9,14 +9,14 @@ let package = Package(
         .executable(name: "KocomSwift", targets: ["KocomSwift"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/emqx/CocoaMQTT", exact: Version(2, 1, 6)),
+        .package(url: "https://github.com/swift-server-community/mqtt-nio", exact: Version(7, 6, 5)),
         .package(url: "https://github.com/robbiehanson/CocoaAsyncSocket", exact: Version(7, 6, 5))
     ],
     targets: [
         .executableTarget(
             name: "KocomSwift",
             dependencies: [
-                .product(name: "CocoaMQTT", package: "CocoaMQTT"),
+                .product(name: "MQTTNIO", package: "mqtt-nio"),
                 .product(name: "CocoaAsyncSocket", package: "CocoaAsyncSocket"),
             ],
             resources: [
