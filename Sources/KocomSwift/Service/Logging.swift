@@ -6,7 +6,9 @@
 //
 
 import Foundation
+#if canImport(OSLog)
 import OSLog
+#endif
 
 final class Logging {
     enum LogLevel: Int {

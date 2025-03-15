@@ -1,9 +1,9 @@
 import Foundation
-import CocoaMQTT
+import MQTTNIO
+import NIO
 
 protocol MQTTClientProtocol {
     func connect() throws
-    func subscribe(topic: String, qos: Int)
     func publish(topic: String, payload: String)
 }
 
@@ -19,7 +19,7 @@ final class MQTTService: MQTTClientProtocol {
     private let rs485Service: RS485Service
     private let homeAssistantService: HomeAssistantService
     private let commandSendService: CommandSendService
-    private let mqtt: CocoaMQTT
+    private let mqtt: MQTTClient
     
     init(
         rs485Service: RS485Service,
@@ -36,143 +36,117 @@ final class MQTTService: MQTTClientProtocol {
         }
         
         let clientID = UUID().uuidString
-        let mqtt = CocoaMQTT(
-            clientID: clientID,
+        
+        let mqtt = MQTTClient(
             host: host,
-            port: port
+            port: Int(port),
+            identifier: clientID,
+            eventLoopGroupProvider: .shared(MultiThreadedEventLoopGroup.singleton),
+            configuration: .init(
+                userName: username,
+                password: password
+            )
         )
-        
-        mqtt.username = username
-        mqtt.password = password
-        
-        mqtt.allowUntrustCACertificate = true
-        mqtt.enableSSL = false
-        mqtt.autoReconnect = true
         
         self.rs485Service = rs485Service
         self.homeAssistantService = homeAssistantService
         self.commandSendService = commandSendService
         self.mqtt = mqtt
-        self.mqtt.delegate = self
     }
     
     func connect() throws {
         Logging.shared.log("Connecting to server...")
         
-        if !self.mqtt.connect() {
-            throw MQTTError.failedToConnect
+        Task {
+            do {
+                try await self.mqtt.connect()
+                
+                self.homeAssistantService.publishDiscovery()
+                try await self.subscribe()
+                
+                self.mqtt.addShutdownListener(named: "") { result in
+                    Logging.shared.log("disconnected \(result)", level: .error)
+                }
+            } catch {
+                throw MQTTError.failedToConnect
+            }
         }
     }
 
-    func subscribe(topic: String, qos: Int) {
-        Logging.shared.log("Subscribing to topic: \(topic) with QoS: \(qos)")
-        self.mqtt.subscribe(topic, qos: .qos0)
+    func subscribe() async throws {
+        let topic = "kocom2/#"
+        Logging.shared.log("Subscribing to topic: \(topic)")
+        
+        try await self.mqtt.subscribe(to: [.init(topicFilter: topic, qos: .atMostOnce)])
+        
+        self.mqtt.addPublishListener(named: topic) { result in
+            switch result {
+                case .success(let info):
+                    self.handleMQTTMessage(topic: info.topicName, payload: info.payload)
+                case .failure(let error):
+                    Logging.shared.log("Failed to subscribe \(error)", level: .error)
+            }
+        }
     }
 
     func publish(topic: String, payload: String) {
         Logging.shared.log("Publishing to \(topic): \(payload)", level: .debug)
-        self.mqtt.publish(topic, withString: payload)
+        _ = self.mqtt.publish(to: topic, payload: .init(string: payload), qos: .atLeastOnce)
     }
 
-    func handleMQTTMessage(message: CocoaMQTTMessage) {
-        guard let payload = message.string else {
+    func handleMQTTMessage(topic: String, payload: ByteBuffer) {
+        guard let bytes = payload.getBytes(at: 0, length: payload.readableBytes),
+              let payload = String(data: Data(bytes), encoding: .utf8) else {
             Logging.shared.log("Payload is not a string", level: .error)
             return
         }
-        
-        Logging.shared.log("Received message: \(message.topic) \(payload)", level: .debug)
-        
+
+        Logging.shared.log("Received message: \(topic) \(payload)", level: .debug)
+
         let fanDiscovery = MQTTFanDiscovery.fan()
-        switch message.topic {
+        switch topic {
             case fanDiscovery.command_topic:
                 guard let state = MQTTFanPayload.State(rawValue: payload) else {
-                    Logging.shared.log("Invalid Payload \(message)", level: .error)
+                    Logging.shared.log("Invalid Payload \(payload)", level: .error)
                     return
                 }
-                
+
                 self.commandSendService.commandFanState(state: state)
-                
+
             case fanDiscovery.preset_mode_command_topic:
                 guard let state = MQTTFanPayload.Preset(rawValue: payload) else {
-                    Logging.shared.log("Invalid Payload \(message)", level: .error)
+                    Logging.shared.log("Invalid Payload \(payload)", level: .error)
                     return
                 }
-                
+
                 self.commandSendService.commandFanPreset(preset: state)
-                
+
             default:
                 let roomNumber: [Int] = [0, 1]
                 for room in roomNumber {
                     let thermoDiscovery = MQTTThermoDiscovery.thermo(roomNumber: room)
-                    switch message.topic {
+                    switch topic {
                         case thermoDiscovery.mode_command_topic:
                             guard let state = MQTTThermoPayload.State(rawValue: payload) else {
-                                Logging.shared.log("Invalid Payload \(message)", level: .error)
+                                Logging.shared.log("Invalid Payload \(payload)", level: .error)
                                 return
                             }
-                            
+
                             self.commandSendService.commandThermoState(roomNumber: room, isOn: state)
 
                         case thermoDiscovery.temperature_command_topic:
                             guard let double = Double(payload) else {
-                                Logging.shared.log("Invalid Payload \(message)", level: .error)
+                                Logging.shared.log("Invalid Payload \(payload)", level: .error)
                                 return
                             }
-                            
+
                             self.commandSendService.commandThermoTemp(roomNumber: room, temp: Int(double))
-                        
+
                         default:
                             break
                     }
                 }
         }
-    }
-}
-
-/// MARK: - CocoaMQTTDelegate
-extension MQTTService: CocoaMQTTDelegate {
-    func mqtt(_ mqtt: CocoaMQTT, didConnectAck ack: CocoaMQTTConnAck) {
-        Logging.shared.log("Connected \(ack)")
-        self.subscribe(topic: "kocom2/#", qos: 0)
-        self.homeAssistantService.publishDiscovery()
-    }
-    
-    func mqtt(_ mqtt: CocoaMQTT, didPublishMessage message: CocoaMQTTMessage, id: UInt16) {
-        
-    }
-    
-    func mqtt(_ mqtt: CocoaMQTT, didPublishAck id: UInt16) {
-        
-    }
-    
-    func mqtt(_ mqtt: CocoaMQTT, didReceiveMessage message: CocoaMQTTMessage, id: UInt16) {
-        self.handleMQTTMessage(message: message)
-    }
-    
-    func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics success: NSDictionary, failed: [String]) {
-        failed.forEach {
-            Logging.shared.log("Failed to subscribe \($0)", level: .error)
-        }
-        
-        success.allValues.forEach {
-            Logging.shared.log("Subscribed \($0)")
-        }
-    }
-    
-    func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopics topics: [String]) {
-        
-    }
-    
-    func mqttDidPing(_ mqtt: CocoaMQTT) {
-        Logging.shared.log("MQTT -> Ping", level: .debug)
-    }
-    
-    func mqttDidReceivePong(_ mqtt: CocoaMQTT) {
-        Logging.shared.log("MQTT <- Pong", level: .debug)
-    }
-    
-    func mqttDidDisconnect(_ mqtt: CocoaMQTT, withError err: (any Error)?) {
-        Logging.shared.log("Disconnected \(String(describing: err))", level: .error)
     }
 }
 
