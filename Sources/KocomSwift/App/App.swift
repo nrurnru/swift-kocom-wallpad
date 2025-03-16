@@ -17,7 +17,7 @@ final class App {
     static let shared = App()
 
     func initialize() throws {
-        self.rs485Service = try RS485Service.initialize()
+        self.rs485Service = try RS485Service()
         self.homeAssistantService = HomeAssistantService()
         
         self.commandSendService = DefaultCommandSendService(rs485Service: self.rs485Service)
@@ -36,6 +36,6 @@ final class App {
     
     func start() throws {
         try self.mqttService.connect()
-        try self.rs485Service.connect()
+        self.rs485Service.connect()
     }
 }

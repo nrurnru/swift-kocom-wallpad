@@ -6,7 +6,8 @@
 //
 
 import Foundation
-import CocoaAsyncSocket
+import NIO
+import NIOFoundationCompat
 
 /**
  *
@@ -16,40 +17,26 @@ import CocoaAsyncSocket
  * 3. EW11 사용 가정, 소켓통신 사용
  *
  */
-public final class RS485Service: NSObject {
+public final class RS485Service: ChannelInboundHandler {
+    public typealias InboundIn = ByteBuffer
+    
     private weak var homeassistantService: HomeAssistantService?
-    private var socket: GCDAsyncSocket
+    private let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
+    private var channel: Channel?
     
     private let host: String
     private let port: UInt16
     
-    /// RS485Service 대체 생성자입니다.
-    /// - Returns: RS485Service
-    /// - Note: NSObject 상속으로 인한 throwable init() 함수 오버라이딩 불가하여 대체 생성자 사용
-    static func initialize() throws -> RS485Service {
+
+    init() throws {
         guard let host: String = SettingValueReader.value?.RS485_HOST,
               let port: UInt16 = SettingValueReader.value?.RS485_PORT
         else {
             throw RS485Error.invalidConfig
         }
         
-        let socket = GCDAsyncSocket(delegate: nil, delegateQueue: .global())
-        
-        return self.init(
-            socket: socket,
-            host: host,
-            port: port
-        )
-    }
-    
-    /// RS485Service 기본 생성자입니다.
-    private init(socket: GCDAsyncSocket, host: String, port: UInt16) {
-        self.socket = socket
         self.host = host
         self.port = port
-        
-        super.init()
-        self.socket.delegate = self
     }
     
     /// Homeassistant 서비스를 약한 참조로 할당합니다.
@@ -57,44 +44,34 @@ public final class RS485Service: NSObject {
         self.homeassistantService = service
     }
     
-    /// AsyncSocket에서 데이터를 읽어옵니다.
-    /// - Note: Trailer가 나올 때까지 패킷 길이만큼 읽어옵니다.
-    private func readData() {
-        let trailing = Constants.PacketValue.TRAILER.split
+    /// 연결 시도
+    func connect() {
+        Logging.shared.log("TCP try Socket Connect")
         
-        self.socket.readData(
-            to: Data([trailing.upper, trailing.lower]),
-            withTimeout: -1,
-            maxLength: Constants.PACKET_LENGTH,
-            tag: 0
-        )
+        ClientBootstrap(group: self.group)
+            .channelInitializer { channel in
+                channel.pipeline.addHandler(self)
+            }
+            .channelOption(ChannelOptions.socket(IPPROTO_TCP, TCP_NODELAY), value: 1)
+            .connect(host: self.host, port: Int(port))
+            .whenComplete { result in
+                switch result {
+                    case .success(let channel):
+                        Logging.shared.log("Connected to \(self.host):\(self.port)")
+                        self.channel = channel
+                    case .failure(let error):
+                        Logging.shared.log("Failed to connect: \(error.localizedDescription)", level: .error)
+                        self.reconnect()
+                }
+            }
     }
+    
     
     private func reconnect() {
         Logging.shared.log("TCP Socket try Reconnect after 5 seconds...")
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-            do {
-                try self.connect()
-            } catch {
-                Logging.shared.log("Reconnect Failed: \(error)", level: .error)
-                /// TODO: Reconnect 실패 경우 처리
-            }
-        }
-    }
-    
-    /// 연결 시도
-    /// - Throws: RS485Error.failedToConnect
-    func connect() throws {
-        Logging.shared.log("TCP try Socket Connect")
-        
-        do {
-            try self.socket.connect(
-                toHost: self.host,
-                onPort: self.port
-            )
-        } catch {
-            throw RS485Error.failedToConnect(description: error.localizedDescription)
+        DispatchQueue.global().asyncAfter(deadline: .now() + 5) {
+            self.connect()
         }
     }
     
@@ -137,38 +114,64 @@ public final class RS485Service: NSObject {
     }
     
     func writeData(data: Data) {
+        guard let channel = self.channel else {
+            Logging.shared.log("Channel not connected", level: .error)
+            return
+        }
+        
         guard data.count == Constants.PACKET_LENGTH else {
             Logging.shared.log("Data Length Invalid: \(data.bigEndianHex)", level: .error)
             return
         }
         
-        Logging.shared.log("Data Sent: \(data.bigEndianHex)", level: .debug)
-        self.socket.write(data, withTimeout: 0, tag: 0)
+        var buffer: ByteBuffer = channel.allocator.buffer(capacity: data.count)
+        buffer.writeBytes(data)
+        channel.writeAndFlush(buffer)
+            .whenComplete { result in
+                switch result {
+                    case .success:
+                        Logging.shared.log("Data Sent: \(data.bigEndianHex)", level: .debug)
+                    case .failure(let error):
+                        Logging.shared.log("Data send failed: \(error)", level: .error)
+                }
+            }
     }
     
     func writeData(packet: KocomPacket) {
         self.writeData(data: packet.rawData)
     }
-}
+    
+    public func channelRead(context: ChannelHandlerContext, data: NIOAny) {
+        let buffer = unwrapInboundIn(data)
+        let receivedData = buffer.getData(at: 0, length: buffer.readableBytes) ?? Data()
+        
+        Logging.shared.log("Data Received: \(receivedData.bigEndianHex)", level: .debug)
+        
+        guard receivedData.count >= Constants.PACKET_LENGTH else {
+            Logging.shared.log("Data too short: \(receivedData.bigEndianHex)", level: .error)
+            return
+        }
+            
+        let header: UInt16 = receivedData[Constants.PacketRange.HEADER].unsafeBytes()
+        guard header == Constants.PacketValue.HEADER.bigEndian else {
+            Logging.shared.log("Header not aligned: \(receivedData.bigEndianHex)", level: .debug)
+            return
+        }
+        
+        Array(receivedData).chunked(into: Int(Constants.PACKET_LENGTH)).forEach { [weak self] packetData in
+            guard let self else { return }
+            guard packetData.count == Constants.PACKET_LENGTH else {
+                Logging.shared.log("Packet Data Chunk remained: \(Data(packetData).bigEndianHex)", level: .error)
+                return
+            }
+            self.handlePacket(data: Data(packetData))
+        }
+    }
 
-/// MARK: - GCDAsyncSocketDelegate
-extension RS485Service: GCDAsyncSocketDelegate {
-    public func socket(_ sock: GCDAsyncSocket, didConnectToHost host: String, port: UInt16) {
-        Logging.shared.log("Connected to \(host):\(port)")
-        
-        self.readData()
-    }
-    
-    public func socket(_ sock: GCDAsyncSocket, didRead data: Data, withTag tag: Int) {
-        Logging.shared.log("Data Received: \(data.bigEndianHex)", level: .debug)
-        
-        self.handlePacket(data: data)
-        self.readData()
-    }
-    
-    public func socketDidDisconnect(_ sock: GCDAsyncSocket, withError err: (any Error)?) {
-        Logging.shared.log("TCP Socket Disconnected \(String(describing: err))", level: .error)
-        
+    public func errorCaught(context: ChannelHandlerContext, error: Error) {
+        Logging.shared.log("TCP Socket Error: \(error)", level: .error)
+        context.close(promise: nil)
+        try? self.channel?.close().wait()
         self.reconnect()
     }
 }

@@ -57,7 +57,7 @@ final class MQTTService: MQTTClientProtocol {
     func connect() throws {
         Logging.shared.log("Connecting to server...")
         
-        Task {
+        Task { @MainActor in
             do {
                 try await self.mqtt.connect()
                 
