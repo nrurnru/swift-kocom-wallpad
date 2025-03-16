@@ -9,6 +9,7 @@ import Foundation
 
 struct KocomPacket {
     let header: UInt16
+    let unknown: UInt8 = Constants.PacketValue.TYPE_UNKNOWN
     let signal: KocomPacketSignalType
     let monitor: KocomPacketMonitorType
     let dest: KocomPacketDestinationType
@@ -20,6 +21,7 @@ struct KocomPacket {
     
     var rawData: Data {
         let data =
+        self.unknown.data +
         self.signal.rawValue.data +
         self.monitor.rawValue.data +
         self.dest.rawValue.data +
@@ -71,23 +73,23 @@ extension KocomPacket {
             return nil
         }
         
-        guard let signal = KocomPacketSignalType(rawValue: .init(bigEndian: signalValue)) else {
+        guard let signal = KocomPacketSignalType(rawValue: signalValue) else {
             return nil
         }
         self.signal = signal
         
-        guard let monitor = KocomPacketMonitorType(rawValue: .init(bigEndian: monitorValue)) else {
+        guard let monitor = KocomPacketMonitorType(rawValue: monitorValue) else {
             return nil
         }
         self.monitor = monitor
         
-        let dest = KocomPacketDestinationType(rawValue: .init(bigEndian: destValue)) ?? .UNKNOWN
+        let dest = KocomPacketDestinationType(rawValue: destValue) ?? .UNKNOWN
         self.dest = dest
         
-        let source = KocomPacketDestinationType(rawValue: .init(bigEndian: srcValue)) ?? .UNKNOWN
+        let source = KocomPacketDestinationType(rawValue: srcValue) ?? .UNKNOWN
         self.source = source
         
-        guard let command = KocomPacketCommandType(rawValue: .init(bigEndian: cmdValue)) else {
+        guard let command = KocomPacketCommandType(rawValue: cmdValue) else {
             return nil
         }
         self.command = command

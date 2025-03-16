@@ -14,16 +14,16 @@ struct Constants {
     
     struct PacketValue {
         /// 0xAA 0x55
-        static let HEADER: UInt16 = 43605
+        static let HEADER: UInt16 = 0x55AA
         
         /// 0x0D 0x0D
-        static let TRAILER: UInt16 = 3341
+        static let TRAILER: UInt16 = 0x0D0D
         
         /// 0x30, 고정값
-        static let TYPE_UNKNOWN: UInt8 = 48
+        static let TYPE_UNKNOWN: UInt8 = 0x30
         
         /// 0x3E
-        static let COMMAND_QUERY: UInt8 = 62
+        static let COMMAND_QUERY: UInt8 = 0x3E
     }
     
     /** KOCOM 패킷 바이트 범위

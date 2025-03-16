@@ -9,24 +9,24 @@ import Foundation
 
 enum KocomPacketDestinationType: UInt16 {
     /// 0x01 0x00
-    case WALLPAD = 256
+    case WALLPAD = 0x0001
     /// 0x0E 0x00
-    case LIGHT = 3584
+    case LIGHT = 0x000E
     /// 0x48 0x00
-    case FAN = 18432
+    case FAN = 0x0048
     /// 0x36 0x00
-    case THERMO_FIRST = 13824
+    case THERMO_FIRST = 0x0036
     /// 0x36 0x01
-    case THERMO_SECOND = 13825
+    case THERMO_SECOND = 0x0136
     /// 0x36 0x02
-    case THERMO_THIRD = 13826
+    case THERMO_THIRD = 0x0236
     /// 0x36 0x03
-    case THERMO_FOURTH = 13827
+    case THERMO_FOURTH = 0x0336
     
     case UNKNOWN = 0
     
     var isThermo: Bool {
-        return (self.rawValue & 0xFF00) == 0x3600
+        return (self.rawValue & 0xFF) == 0x36
     }
     
     var isFan: Bool {
@@ -34,7 +34,7 @@ enum KocomPacketDestinationType: UInt16 {
     }
     
     var roomNumber: Int {
-        return Int(self.rawValue & 0x00FF)
+        return Int((self.rawValue & 0xFF00) >> 8)
     }
     
     init(thermoRoomNumber: Int) {

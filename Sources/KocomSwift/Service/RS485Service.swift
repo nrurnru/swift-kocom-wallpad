@@ -153,7 +153,7 @@ public final class RS485Service: ChannelInboundHandler {
         }
             
         let header: UInt16 = receivedData[Constants.PacketRange.HEADER].unsafeBytes()
-        guard header == Constants.PacketValue.HEADER.bigEndian else {
+        guard header == Constants.PacketValue.HEADER else {
             Logging.shared.log("Header not aligned: \(receivedData.bigEndianHex)", level: .debug)
             return
         }

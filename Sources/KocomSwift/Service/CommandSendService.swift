@@ -27,7 +27,7 @@ final class DefaultCommandSendService: CommandSendService {
     /// MARK: Fan
     func commandFanState(state: MQTTFanPayload.State) {
         let onOff: UInt16 = switch state {
-            case .On: 0x1101
+            case .On: 0x0111
             case .Off: 0x0000
         }
         
@@ -50,7 +50,7 @@ final class DefaultCommandSendService: CommandSendService {
     
     func commandFanPreset(preset: MQTTFanPayload.Preset) {
         let onOff: UInt16 = switch preset {
-            case .Low, .Medium, .High: 0x1101
+            case .Low, .Medium, .High: 0x0111
             case .Off: 0x0000
         }
         
@@ -74,8 +74,8 @@ final class DefaultCommandSendService: CommandSendService {
     /// MARK: Thermo
     func commandThermoState(roomNumber: Int, isOn state: MQTTThermoPayload.State) {
         let heatMode: UInt16 = switch state {
-            case .heat: 0x1100
-            case .off: 0x0100
+            case .heat: 0x0011
+            case .off: 0x0001
         }
         
         let destination = KocomPacketDestinationType(thermoRoomNumber: roomNumber)
@@ -99,7 +99,7 @@ final class DefaultCommandSendService: CommandSendService {
     }
     
     func commandThermoTemp(roomNumber: Int, temp: Int) {
-        let heatMode: UInt16 = 0x1100
+        let heatMode: UInt16 = 0x0011
         let destination = KocomPacketDestinationType(thermoRoomNumber: roomNumber)
         let temperature = UInt8(temp)
         var value = heatMode.data + temperature.data
@@ -113,7 +113,7 @@ final class DefaultCommandSendService: CommandSendService {
             source: .WALLPAD,
             command: .STATE,
             value: value,
-            trailer: Constants.PacketValue.HEADER
+            trailer: Constants.PacketValue.TRAILER
         )
         
         self.rs485Service.writeData(packet: packet)
