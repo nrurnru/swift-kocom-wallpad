@@ -9,8 +9,8 @@ import Foundation
 
 /// [Docs](https://developers.home-assistant.io/docs/device_registry_index/)
 struct MQTTPayloadDevice: Encodable {
-    let name = "Kocom Smart Wallpad Swift"
-    let ids = "kocom_smart_wallpad_2"
+    let name = "Kocom Smart Wallpad"
+    let ids = "kocom_smart_wallpad_swift"
     let mf = "KOCOM"
     let mdl = "스마트 월패드"
     let sw = "2000.01.01"

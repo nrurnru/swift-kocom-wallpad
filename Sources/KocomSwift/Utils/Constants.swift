@@ -12,6 +12,8 @@ struct Constants {
     static let PACKET_LENGTH: UInt = 21
     static let PACKET_VALUE_LENGTH: Int = 8
     
+    static let MQTT_COMMON_TOP_TOPIK: String = "kocom_swift"
+    
     struct PacketValue {
         /// 0xAA 0x55
         static let HEADER: UInt16 = 0x55AA

@@ -74,7 +74,7 @@ final class MQTTService: MQTTClientProtocol {
     }
 
     func subscribe() async throws {
-        let topic = "kocom2/#"
+        let topic = "\(Constants.MQTT_COMMON_TOP_TOPIK)/#"
         Logging.shared.log("Subscribing to topic: \(topic)")
         
         try await self.mqtt.subscribe(to: [.init(topicFilter: topic, qos: .atMostOnce)])

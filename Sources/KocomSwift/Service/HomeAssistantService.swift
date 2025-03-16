@@ -81,7 +81,7 @@ final class HomeAssistantService {
         let str = String(data: data, encoding: .utf8) ?? "{}"
         
         self.mqttService?.publish(
-            topic: "kocom2/livingroom/fan/state",
+            topic: "\(Constants.MQTT_COMMON_TOP_TOPIK)/livingroom/fan/state",
             payload: str
         )
     }
@@ -92,7 +92,7 @@ final class HomeAssistantService {
         let str = String(data: data, encoding: .utf8) ?? "{}"
         
         self.mqttService?.publish(
-            topic: "kocom2/room/thermo/\(packet.dest.roomNumber)/state",
+            topic: "\(Constants.MQTT_COMMON_TOP_TOPIK)/room/thermo/\(packet.dest.roomNumber)/state",
             payload: str
         )
     }

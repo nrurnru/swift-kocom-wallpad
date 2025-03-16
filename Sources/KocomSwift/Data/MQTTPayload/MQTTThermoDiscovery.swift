@@ -27,21 +27,21 @@ struct MQTTThermoDiscovery: Encodable {
     let device: MQTTPayloadDevice
     
     static func topic(roomNumber: Int) -> String {
-        "homeassistant/climate/swift_kocom_\(roomNumber)_thermo/config"
+        "homeassistant/climate/kocom_swift_thermo_\(roomNumber)/config"
     }
-
+    
     static func thermo(roomNumber: Int) -> MQTTThermoDiscovery {
         self.init(
-            name: "Swift Kocom Wallpad Thermostat \(roomNumber)",
-            mode_state_topic: "kocom2/room/thermo/\(roomNumber)/state",
-            mode_command_topic: "kocom2/room/thermo/\(roomNumber)/heat_mode/command",
+            name: "Kocom Wallpad Thermostat #\(roomNumber + 1)",
+            mode_state_topic: "\(Constants.MQTT_COMMON_TOP_TOPIK)/room/thermo/\(roomNumber)/state",
+            mode_command_topic: "\(Constants.MQTT_COMMON_TOP_TOPIK)/room/thermo/\(roomNumber)/heat_mode/command",
             mode_state_template: "{{ value_json.heat_mode }}",
-            temperature_state_topic: "kocom2/room/thermo/\(roomNumber)/state",
-            temperature_command_topic: "kocom2/room/thermo/\(roomNumber)/set_temp/command",
+            temperature_state_topic: "\(Constants.MQTT_COMMON_TOP_TOPIK)/room/thermo/\(roomNumber)/state",
+            temperature_command_topic: "\(Constants.MQTT_COMMON_TOP_TOPIK)/room/thermo/\(roomNumber)/set_temp/command",
             temperature_state_template: "{{ value_json.set_temp }}",
-            current_temperature_topic: "kocom2/room/thermo/\(roomNumber)/state",
+            current_temperature_topic: "\(Constants.MQTT_COMMON_TOP_TOPIK)/room/thermo/\(roomNumber)/state",
             current_temperature_template: "{{ value_json.cur_temp }}",
-            unique_id: "swift_kocom_wallpad_thermo_\(roomNumber)",
+            unique_id: "kocom_swift_wallpad_fan_\(roomNumber)",
             modes: MQTTThermoPayload.State.allCases,
             min_temp: 20,
             max_temp: 30,
