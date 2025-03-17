@@ -7,7 +7,7 @@
 
 import Foundation
 
-/// 메인 번들에서 Settings.plist를 읽어오는 클래스
+/// 필요한 설정을 가져오는 클래스
 public final class SettingValueReader {
     
     /// Settings.plist에 명시된 프로퍼티
@@ -24,23 +24,30 @@ public final class SettingValueReader {
     public static var value: Setting!
     
     /// 설정값 로드
-    /// - throws: ``InfoPlistError``
+    /// - throws: ``SettingError``
     public static func loadEnvironmentValues() throws {
-        let bundle: Bundle
-        #if SWIFT_PACKAGE
-        bundle = .module
-        #else
-        bundle = Bundle.main
-        #endif
-        guard
-            let plistURL = bundle.url(forResource: "Settings", withExtension: "plist"),
-            let data = try? Data(contentsOf: plistURL),
-            let setting = try? PropertyListDecoder().decode(Setting.self, from: data)
+        let environments = ProcessInfo.processInfo.environment
+        
+        guard let RS485_HOST = environments["RS485_HOST"],
+              let RS485_PORT_STR = environments["RS485_PORT"],
+              let RS485_PORT = UInt16(RS485_PORT_STR),
+              let MQTT_HOST = environments["MQTT_HOST"],
+              let MQTT_PORT_STR = environments["MQTT_PORT"],
+              let MQTT_PORT = UInt16(MQTT_PORT_STR),
+              let MQTT_USERNAME = environments["MQTT_USERNAME"],
+              let MQTT_PASSWORD = environments["MQTT_PASSWORD"]
         else {
             throw SettingError()
         }
         
-        Self.value = setting
+        Self.value = .init(
+            RS485_HOST: RS485_HOST,
+            RS485_PORT: RS485_PORT,
+            MQTT_HOST: MQTT_HOST,
+            MQTT_PORT: MQTT_PORT,
+            MQTT_USERNAME: MQTT_USERNAME,
+            MQTT_PASSWORD: MQTT_PASSWORD
+        )
     }
         
     

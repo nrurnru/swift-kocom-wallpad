@@ -20,9 +20,6 @@ let package = Package(
             name: "KocomSwift",
             dependencies: [
                 .product(name: "MQTTNIO", package: "mqtt-nio"),
-            ],
-            resources: [
-                .process("Resources")
             ]
         ),
         .testTarget(
