@@ -118,13 +118,13 @@ final class MQTTService: MQTTClientProtocol {
 
                 self.commandSendService.commandFanState(state: state)
 
-            case fanDiscovery.preset_mode_command_topic:
-                guard let state = MQTTFanPayload.Preset(rawValue: payload) else {
+            case fanDiscovery.percentage_command_topic:
+                guard let step = Int(payload), let preset = MQTTFanPayload.Preset(speedStep: step) else {
                     Logging.shared.log("Invalid Payload \(payload)", level: .error)
                     return
                 }
 
-                self.commandSendService.commandFanPreset(preset: state)
+                self.commandSendService.commandFanPreset(preset: preset)
 
             default:
                 let roomNumber: [Int] = [0, 1]

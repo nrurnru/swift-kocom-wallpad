@@ -13,11 +13,11 @@ struct MQTTFanDiscovery: Encodable {
     let command_topic: String = "\(Constants.MQTT_COMMON_TOP_TOPIK)/livingroom/fan/command"
     let state_topic: String = "\(Constants.MQTT_COMMON_TOP_TOPIK)/livingroom/fan/state"
     let state_value_template: String = "{{ value_json.state }}"
-    let preset_mode_state_topic: String = "\(Constants.MQTT_COMMON_TOP_TOPIK)/livingroom/fan/state"
-    let preset_mode_value_template: String = "{{ value_json.preset }}"
-    let preset_mode_command_topic: String = "\(Constants.MQTT_COMMON_TOP_TOPIK)/livingroom/fan/set_preset_mode/command"
-    let preset_mode_command_template: String = "{{ value }}"
-    let preset_modes: [MQTTFanPayload.Preset] = MQTTFanPayload.Preset.allCases
+    let percentage_state_topic: String = "\(Constants.MQTT_COMMON_TOP_TOPIK)/livingroom/fan/state"
+    let percentage_value_template: String = "{{ value_json.percentage }}"
+    let percentage_command_topic: String = "\(Constants.MQTT_COMMON_TOP_TOPIK)/livingroom/fan/set_percentage/command"
+    let speed_range_min: Int = 1
+    let speed_range_max: Int = 3
     let payload_on: MQTTFanPayload.State = .On
     let payload_off: MQTTFanPayload.State = .Off
     let qos: Int = 0
