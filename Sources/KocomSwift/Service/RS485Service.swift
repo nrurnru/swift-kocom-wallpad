@@ -69,8 +69,9 @@ public final class RS485Service: ChannelInboundHandler {
     
     private func reconnect() {
         Logging.shared.log("TCP Socket try Reconnect after 5 seconds...")
-        
-        DispatchQueue.global().asyncAfter(deadline: .now() + 5) {
+
+        Task {
+            try? await Task.sleep(for: .seconds(5))
             self.connect()
         }
     }

@@ -53,19 +53,27 @@ final class MQTTService: MQTTClientProtocol {
     
     func connect() throws {
         Logging.shared.log("Connecting to server...")
-        
-        Task { @MainActor in
+
+        Task {
+            await self.connectWithRetry()
+        }
+    }
+
+    private func connectWithRetry() async {
+        while true {
             do {
                 try await self.mqtt.connect()
-                
+
                 self.homeAssistantService.publishDiscovery()
                 try await self.subscribe()
-                
+
                 self.mqtt.addShutdownListener(named: "") { result in
                     Logging.shared.log("disconnected \(result)", level: .error)
                 }
+                return
             } catch {
-                throw MQTTError.failedToConnect
+                Logging.shared.log("Failed to connect: \(error), retry in 5 seconds...", level: .error)
+                try? await Task.sleep(for: .seconds(5))
             }
         }
     }
@@ -150,6 +158,5 @@ final class MQTTService: MQTTClientProtocol {
 extension MQTTService {
     enum MQTTError: Error {
         case invalidConfig
-        case failedToConnect
     }
 }
