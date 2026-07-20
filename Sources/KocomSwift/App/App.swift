@@ -23,7 +23,6 @@ final class App {
         self.commandSendService = DefaultCommandSendService(rs485Service: self.rs485Service)
         
         let mqttService = try MQTTService(
-            rs485Service: self.rs485Service,
             homeAssistantService: self.homeAssistantService,
             commandSendService: self.commandSendService
         )

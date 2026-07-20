@@ -12,9 +12,9 @@ import Foundation
  * [Docs](https://www.home-assistant.io/integrations/mqtt)
  */
 final class HomeAssistantService {
-    private weak var mqttService: MQTTService?
-    
-    func setMQTTService(mqttService: MQTTService) {
+    private weak var mqttService: MQTTClientProtocol?
+
+    func setMQTTService(mqttService: MQTTClientProtocol) {
         self.mqttService = mqttService
     }
     

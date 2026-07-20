@@ -2,7 +2,7 @@ import Foundation
 import MQTTNIO
 import NIO
 
-protocol MQTTClientProtocol {
+protocol MQTTClientProtocol: AnyObject {
     func connect() throws
     func publish(topic: String, payload: String)
 }
@@ -16,13 +16,11 @@ protocol MQTTClientProtocol {
  *
  */
 final class MQTTService: MQTTClientProtocol {
-    private let rs485Service: RS485Service
     private let homeAssistantService: HomeAssistantService
     private let commandSendService: CommandSendService
     private let mqtt: MQTTClient
-    
+
     init(
-        rs485Service: RS485Service,
         homeAssistantService: HomeAssistantService,
         commandSendService: CommandSendService
     ) throws {
@@ -48,7 +46,6 @@ final class MQTTService: MQTTClientProtocol {
             )
         )
         
-        self.rs485Service = rs485Service
         self.homeAssistantService = homeAssistantService
         self.commandSendService = commandSendService
         self.mqtt = mqtt
