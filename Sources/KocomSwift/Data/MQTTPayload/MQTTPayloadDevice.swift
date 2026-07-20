@@ -13,7 +13,7 @@ struct MQTTPayloadDevice: Encodable {
     let ids = "kocom_smart_wallpad_swift"
     let mf = "KOCOM"
     let mdl = "스마트 월패드"
-    let sw = "1.0.0"
+    let sw = "1.1.0"
     
     static func device() -> MQTTPayloadDevice {
         .init()
