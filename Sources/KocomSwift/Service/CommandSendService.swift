@@ -31,7 +31,7 @@ final class DefaultCommandSendService: CommandSendService {
             case .Off: 0x0000
         }
         
-        var value = onOff.data + MQTTFanPayload.Preset.Medium.value.data
+        var value = onOff.data + MQTTFanPayload.Preset.High.value.data
         self.addPadding(data: &value, until: Constants.PACKET_VALUE_LENGTH)
         
         let packet = KocomPacket(
